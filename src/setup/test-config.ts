@@ -15,7 +15,7 @@ const CFUL_ERR_BASE = `No value given for required Contentful config var: `;
 
 async function config() {
   // Ping WP API
-  const response = await fetch(WP_API_URL);
+  const response = await fetch(String(WP_API_URL));
   if (response.status !== 200) throw new Error(WP_ERR_MSG);
   // We want to strip the base url from the absolute 'from' url's
   // we get back from wordpress and use /relative to /relative as from->to
