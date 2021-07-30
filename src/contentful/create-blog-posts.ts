@@ -12,6 +12,8 @@ import {
   USER_DIR_TRANSFORMED,
 } from "../util";
 import { CfPost } from "../wordpress/post-transform";
+import { generateRichText } from "contentful-html-to-richtext";
+import { documentToHtmlString } from "@contentful/rich-text-html-renderer";
 
 // Do not exceed ten, delay is an important factor too
 // 8 processes and 1s delay seem to make sense, for 10p/s
@@ -125,7 +127,7 @@ function transform(
   heroMap: Map<any, any>,
   authorMap: Map<any, any>
 ) {
-  console.log("create-blog-posts ➡️ authorMap:", post);
+  console.log("create-blog-posts ➡️ authorMap:", post.title);
   console.log("create-blog-posts ➡️ authorMap:", authorMap);
 
   return {
@@ -169,12 +171,15 @@ function transform(
   };
 }
 
-function replaceInlineImageUrls(text: string, map: Map<any, any>) {
-  let replacedText = text;
+function replaceInlineImageUrls(node: any, map: Map<any, any>) {
+  const html = documentToHtmlString(node);
+  let replacedHtml = html;
   map.forEach((newUrl, oldUrl) => {
-    replacedText = replacedText.replace(oldUrl, newUrl);
+    replacedHtml = replacedHtml.replace(oldUrl, newUrl);
   });
-  return replacedText;
+
+  const newNode = generateRichText(replacedHtml)
+  return newNode;
 }
 
 function createMapsFromAssets(assets: any[]) {

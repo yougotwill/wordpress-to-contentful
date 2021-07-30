@@ -63,12 +63,12 @@ export interface CfPost {
   link: string;
 }
 
-const extractImages = (post: any) => {
+const extractImages = (post: any, html: string) => {
   const regex = /<img.*?src="(.*?)"[\s\S]*?alt="(.*?)"/g;
   post.bodyImages = [];
 
   let foundImage: RegExpExecArray | null;
-  while ((foundImage = regex.exec(post.body))) {
+  while ((foundImage = regex.exec(html))) {
     const alt = foundImage[2] ? foundImage[2].replace(/_/g, " ") : "";
     post.bodyImages.push({
       link: foundImage[1],
@@ -80,22 +80,15 @@ const extractImages = (post: any) => {
   return post;
 };
 
-function convertToRichText(post: CfPost): CfPost {
-  return {
-    ...post,
-    body: parser.generateRichText(post.body),
-  };
-}
-
 const transform = (wpPost: WpPost) => {
   const post: CfPost = {
-    title: wpPost.title.rendered,
+    title: html2plaintext(wpPost.title.rendered),
     description: (html2plaintext as (value: string) => string)(
       wpPost.excerpt.rendered || ""
     ),
     author: wpPost.author,
     date: wpPost.date_gmt + "+00:00",
-    body: wpPost.content.rendered,
+    body: parser.generateRichText((wpPost.content.rendered.replace(/[\n\r]/gm, ''))),
     slug: wpPost.slug,
     category: wpPost.categories[0],
     featuredMedia: wpPost.featured_media,
@@ -103,7 +96,9 @@ const transform = (wpPost: WpPost) => {
     link: wpPost.link,
   };
 
-  return { slug: post.slug, post: convertToRichText(extractImages(post)) };
+  const postWithImages = extractImages(post, wpPost.content.rendered);
+
+  return { slug: post.slug, post: postWithImages };
 };
 
 const writePost = (name: string, data: any) =>
